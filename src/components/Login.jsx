@@ -1,13 +1,19 @@
 import { useRef, useState } from "react";
 import Header from "./Header";
 import { checkValidateData } from "../utils/Validate";
-import { createUserWithEmailAndPassword , signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword , signInWithEmailAndPassword , updateProfile} from "firebase/auth";
 import { auth } from "../utils/Firebase";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 
 const Login = () => {
     const [isSignInForm,setisSignInForm] = useState(true);
     const [errormessage, seterrormessage] = useState(null);
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
 
+    const name = useRef(null);
     const email = useRef(null);
     const password = useRef(null);
 
@@ -28,8 +34,21 @@ const Login = () => {
                 .then((userCredential) => {
                     // Signed up 
                     const user = userCredential.user;
+
+                    updateProfile(user, {
+                        displayName: name.current.value , 
+                        photoURL: "https://avatars.githubusercontent.com/u/109842993?s=400&u=4947869d079440fc4818433010121d4535b4efd9&v=4"
+                      }).then(() => {
+
+                        const {uid, email, displayName, photoURL} = auth.currentUser;
+                        dispatch(addUser({ uid:uid , email:email, displayName:displayName, photoURL:photoURL }));
+
+                        navigate("/browse");
+                      }).catch((error) => {
+                        seterrormessage(error.message);
+                      });
+
                     console.log(user);
-                    
                 })
                 .catch((error) => {
                     const errorCode = error.code;
@@ -44,6 +63,7 @@ const Login = () => {
                 // Signed in 
                 const user = userCredential.user;
                 console.log(user);
+                navigate("/browse");
                 
             })
             .catch((error) => {
@@ -53,7 +73,7 @@ const Login = () => {
             });
         }
     }
-    
+
     const toggleSignInForm = () => {
         setisSignInForm(!isSignInForm);
     }
@@ -70,7 +90,7 @@ const Login = () => {
 
                 <h1 className="font-bold py-5 text-3xl">{isSignInForm? "Sign In": "Sign Up"}</h1>
 
-                {!isSignInForm && <input type="Name" placeholder="Full Name" className="p-4 my-2 w-full rounded-md bg-gray-600 bg-opacity-80 "/>}
+                {!isSignInForm && <input ref={name} type="Name" placeholder="Full Name" className="p-4 my-2 w-full rounded-md bg-gray-600 bg-opacity-80 "/>}
 
                 <input ref={email} type="Email Address" placeholder="Email or Mobile Number" className="p-4 my-2 w-full rounded-md bg-gray-600 bg-opacity-80 "/>
 
